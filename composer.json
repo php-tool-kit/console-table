@@ -1,0 +1,28 @@
+{
+    "name": "php-tool-kit/console-table",
+    "description": "Exibi\u0000\u0000o de dados tabulares no console.",
+    "type": "library",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Everton da Rosa",
+            "email": "everton3x@gmail.com"
+        }
+    ],
+    "minimum-stability": "dev",
+    "require": {
+        "league/climate": "dev-master"
+    },
+    "autoload": {
+        "psr-4": {
+            "PTK\\Console\\Table\\": "src"
+        }
+    },
+    "scripts": {
+        "push": [
+            "git add .",
+            "git commit",
+            "git push"
+        ]
+    }
+}
