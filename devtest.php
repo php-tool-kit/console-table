@@ -36,6 +36,8 @@ $tbl1 = new \PTK\Console\Table\Table($dataUnicode);
 $tbl1
     ->setTabelWidth(100)
     ->setCaption('Sample table')
+    ->setColModel(new PTK\Console\Table\ColModel('title', label: 'Título', width: .30, align: PTK\Console\Table\ColModel::ALIGN_CENTER))
+    ->setColModel(new PTK\Console\Table\ColModel('resume', label: 'Resumo', width: .70, align: PTK\Console\Table\ColModel::ALIGN_LEFT))
     ;
 
 echo $tbl1;
