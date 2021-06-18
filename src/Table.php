@@ -21,6 +21,7 @@ class Table {
     protected string $horizontalInternalBorderChar = '-';
     protected string $horizontalHeaderBorderChar = '=';
     protected string $caption = '';
+    protected int $horizontalCellPadding = 1;
 
     public function __construct(array $data) {
         mb_internal_encoding('utf-8');
@@ -43,6 +44,10 @@ class Table {
 //        print_r($this->processed);
 //        exit();
     }
+    
+    protected function getPadString(): string {
+        return str_pad('', $this->horizontalCellPadding);
+    }
 
     protected function buildBody(): void {
 //        print_r($this->processed);exit();
@@ -58,7 +63,7 @@ class Table {
                     if ($name === $names[array_key_first($names)]) {
                         $this->output .= $this->verticalExternalBorderChar;
                     }
-                    $this->output .= $row[$name][$i];
+                    $this->output .= $this->getPadString().$row[$name][$i]. $this->getPadString();
                     if ($name === $names[array_key_last($names)]) {
                         $this->output .= $this->verticalExternalBorderChar . PHP_EOL;
                     } else {
@@ -123,9 +128,9 @@ class Table {
             foreach ($row as $name => $cell) {
                 $align = $aligns[$name];
                 if ($name !== $names[array_key_last($names)]) {
-                    $width = $widths[$name] - 2;
+                    $width = $widths[$name] - 2 - ($this->horizontalCellPadding*2);
                 } else {
-                    $width = $widths[$name] - 1;
+                    $width = $widths[$name] - 1 - ($this->horizontalCellPadding*2);
                 }
                 foreach ($cell as $key => $line) {
                     $data[$index][$name][$key] = $this->strPadUnicode($line, $width, ' ', $align);
@@ -169,12 +174,24 @@ class Table {
         $processed = [];
         foreach ($data as $index => $row) {
             foreach ($row as $name => $cell) {
-                $processed[$index][$name] = mb_str_split($cell, $this->colSpec[$name]['width'] - 2);
+                $processed[$index][$name] = mb_str_split($cell, $this->colSpec[$name]['width'] - 2 - ($this->horizontalCellPadding*2));
             }
         }
-
+//        $processed = $this->applyHorizontalCellPadding($processed);
         return $processed;
     }
+    
+//    protected function applyHorizontalCellPadding(array $data): array {
+//        $processed = [];
+//        foreach ($data as $index => $row){
+//            foreach ($row as $name => $cell){
+//                foreach ($cell as $key => $line){
+//                    $processed[$index][$name][$key] = $this->strPadUnicode($line, $this->horizontalCellPadding, ' ', \STR_PAD_BOTH);
+//                }
+//            }
+//        }
+//        return $processed;
+//    }
 
     public function setColModel(ColModel ...$colmodels): Table {
         foreach ($colmodels as $model) {
@@ -341,6 +358,11 @@ class Table {
     
     public function setTabelWidth(int $width): Table {
         $this->fullAvailableWidth = $width;
+        return $this;
+    }
+    
+    public function setHorizontalCellPadding(int $padding): Table {
+        $this->horizontalCellPadding = $padding;
         return $this;
     }
     
