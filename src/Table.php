@@ -260,6 +260,34 @@ class Table {
     protected function getColNames(): array {
         return array_keys($this->data[array_key_first($this->data)]);
     }
+    
+    protected function buildHeader(): void {
+        
+        $names = $this->getColNames();
+
+        $this->output .= $this->buildHorizontalHeaderBorder();
+
+        foreach ($this->colSpec as $name => $spec){
+            $label = $spec['label'];
+            if($name === $names[array_key_last($names)]){
+                $width = $spec['width']-1;
+            }else{
+                $width = $spec['width']-2;
+            }
+            
+            
+            if($name === $names[array_key_first($names)]){
+                $this->output .= $this->verticalExternalBorderChar;
+            }
+            
+            $this->output .= $this->strPadUnicode($label, $width, ' ', \STR_PAD_BOTH);
+            if($name === $names[array_key_last($names)]){
+                $this->output .= $this->verticalExternalBorderChar.PHP_EOL;
+            }else{
+                $this->output .= $this->verticalInternalBorderChar;
+            }
+        }
+    }
 
     public function output(): string {
         //determina a largura total da tabela
@@ -269,6 +297,7 @@ class Table {
 
         $this->buildColSpec();
         $this->prepare();
+        $this->buildHeader();
         $this->buildBody();
 
         return $this->output;
@@ -278,4 +307,29 @@ class Table {
         return $this->output();
     }
 
+    public function setHorizontalHeaderBorderChar(string $char): Table {
+        $this->horizontalHeaderBorderChar = $char;
+        return $this;
+    }
+    public function setHorizontalInternalBorderChar(string $char): Table {
+        $this->horizontalInternalBorderChar = $char;
+        return $this;
+    }
+    public function setVerticalInternalBorderChar(string $char): Table {
+        $this->verticalInternalBorderChar = $char;
+        return $this;
+    }
+    public function setHorizontalExternalBorderChar(string $char): Table {
+        $this->horizontalExternalBorderChar = $char;
+        return $this;
+    }
+    public function setVerticalExternalBorderChar(string $char): Table {
+        $this->verticalExternalBorderChar = $char;
+        return $this;
+    }
+    
+    public function setTabelWidth(int $width): Table {
+        $this->fullAvailableWidth = $width;
+        return $this;
+    }
 }
