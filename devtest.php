@@ -2,34 +2,36 @@
 
 require 'vendor/autoload.php';
 
-$tbl = new \PTK\Console\Table\Table([
+$dataUnicode = [
     [
-        'id' => 1,
-        'nome' => 'John',
-        'age' => 40
+        'title' => 'Misery',
+        'resume' => 'Paul Sheldon é um famoso escritor reconhecido pela série de best-sellers protagonizados por Misery Chastain.'
     ],
     [
-        'id' => 2,
-        'nome' => 'Mary',
-        'age' => 25
+        'title' => 'A revolução dos bichos: Um conto de fadas',
+        'resume' => 'Verdadeiro clássico moderno, concebido por um dos mais influentes escritores do século XX, A revolução dos bichos é uma fábula sobre o poder. Narra a insurreição dos animais de uma granja contra seus donos. Progressivamente, porém, a revolução degenera numa tirania ainda mais opressiva que a dos humanos.'
     ],
     [
-        'id' => 3,
-        'nome' => 'Paul',
-        'age' => 54
-    ],
-    [
-        'id' => 4,
-        'nome' => 'Ivy',
-        'age' => 15
-    ],
-]);
+        'title' => 'O poder do hábito',
+        'resume' => 'Durante os últimos dois anos, uma jovem transformou quase todos os aspectos de sua vida.'
+    ]
+];
 
-$tbl
-        ->setColModel(new \PTK\Console\Table\ColModel('id', align: \PTK\Console\Table\ColModel::ALIGN_LEFT))
-        ->setColModel(new \PTK\Console\Table\ColModel('nome', width: 0.7, align: \PTK\Console\Table\ColModel::ALIGN_CENTER))
-        ->setColModel(new \PTK\Console\Table\ColModel('age', width: 0.1, align: \PTK\Console\Table\ColModel::ALIGN_RIGHT))
-        ->setTitle('Sample table')
-    ;
+$dataNoUnicode = [
+    [
+        'title' => 'Misery',
+        'resume' => 'Paul Sheldon e um famoso escritor reconhecido pela serie de best-sellers protagonizados por Misery Chastain.'
+    ],
+    [
+        'title' => 'A revolução dos bichos: Um conto de fadas',
+        'resume' => 'Verdadeiro classico moderno, concebido por um dos mais influentes escritores do seculo XX, A revolucao dos bichos e uma fabula sobre o poder. Narra a insurreicao dos animais de uma granja contra seus donos. Progressivamente, porém, a revolucao degenera numa tirania ainda mais opressiva que a dos humanos.'
+    ],
+    [
+        'title' => 'O poder do habito',
+        'resume' => 'Durante os ultimos dois anos, uma jovem transformou quase todos os aspectos de sua vida.'
+    ]
+];
 
-echo $tbl;
+$tbl1 = new \PTK\Console\Table\Table($dataUnicode);
+
+echo $tbl1;

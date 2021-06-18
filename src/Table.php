@@ -8,221 +8,177 @@ namespace PTK\Console\Table;
  */
 class Table {
 
-    protected array $data;
+    protected array $data = [];
+    protected string $output = '';
+    protected array $processed = [];
     protected array $colmodels = [];
     protected \League\CLImate\Util\System\System $system;
     protected array $colSpec = [];
-    protected string $output = '';
-    protected string $intersectionChar = '+';
-    protected string $horizontalExternalBorderChar = '=';
+    protected int $fullAvailableWidth = 0;
     protected string $verticalExternalBorderChar = '#';
-    protected string $horizontalInternalBorderChar = '-';
+    protected string $horizontalExternalBorderChar = '#';
     protected string $verticalInternalBorderChar = '|';
+    protected string $horizontalInternalBorderChar = '-';
     protected string $horizontalHeaderBorderChar = '=';
 
-    /**
-     * 
-     * @var int Largura disponível total
-     */
-    protected int $fullAvailableWidth = 0;
-    protected string $title = '';
-
     public function __construct(array $data) {
+        mb_internal_encoding('utf-8');
         $this->data = $data;
         $this->system = \League\CLImate\Util\System\SystemFactory::getInstance();
     }
 
-    public function render(): string {
-        //determina a largura total da tabela
-        if ($this->fullAvailableWidth === 0) {
-            $this->fullAvailableWidth = $this->system->width();
+    protected function prepare(): void {
+        $this->processed = $this->splitCells($this->data);
+        $this->processed = $this->equalizeLines($this->processed);
+
+        $aligns = [];
+        $widths = [];
+        foreach ($this->colSpec as $name => $spec) {
+            $aligns[$name] = $spec['align'];
+            $widths[$name] = $spec['width'];
         }
+        $this->processed = $this->alignCells($this->processed, $aligns, $widths);
 
-        //prepara a especificação das colunas
-        $this->buildColSpec();
-
-        //quebra/alinhas as células
-        $this->splitAndAlignCellContents();
-
-        //monta a tabela em texto
-        $this->buildOutput();
-
-        return $this->output;
+//        print_r($this->processed);
+//        exit();
     }
 
-    /**
-     * Constroi a saída em texto.
-     * 
-     * @return void
-     */
-    protected function buildOutput(): void {
-        $this->buildTitle();
-        $this->buildHeader();
-        
-        foreach ($this->data as $index => $row) {
+    protected function buildBody(): void {
+//        print_r($this->processed);exit();
+        $maxLines = $this->maxLines($this->processed);
+        $names = $this->getColNames();
 
-            $this->output .= $this->verticalExternalBorderChar;
-            foreach ($row as $key => $lines) {
-                foreach ($lines as $cell) {
-                    $this->output .= $cell;
-                    if ($key !== array_key_last($row)) {
+        $this->output .= $this->buildHorizontalHeaderBorder();
+
+        foreach ($this->processed as $index => $row) {
+
+            for ($i = 0; $i < $maxLines; $i++) {
+                foreach ($names as $name) {
+                    if ($name === $names[array_key_first($names)]) {
+                        $this->output .= $this->verticalExternalBorderChar;
+                    }
+                    $this->output .= $row[$name][$i];
+                    if ($name === $names[array_key_last($names)]) {
+                        $this->output .= $this->verticalExternalBorderChar . PHP_EOL;
+                    } else {
                         $this->output .= $this->verticalInternalBorderChar;
                     }
                 }
             }
-            $this->output .= $this->verticalExternalBorderChar;
-            $this->output .= PHP_EOL;
 
-            if($index !== array_key_last($this->data)){
-                $this->output .= $this->buildHorizontalInternalSeparator(); //linha de baixo
-            }
-        }
-        
-        $this->output .= $this->buildHorizontalExternalSeparator();
-    }
-    
-    protected function buildTitle(): void {
-        if($this->title === ''){
-            return;
-        }
-        
-        $this->output .= $this->verticalExternalBorderChar;
-        $this->output .= str_pad('', $this->fullAvailableWidth - 4, $this->horizontalExternalBorderChar);
-        $this->output .= $this->verticalExternalBorderChar;
-        $this->output .= PHP_EOL;
-        $this->output .= $this->verticalExternalBorderChar;
-        $this->output .= str_pad($this->title, $this->fullAvailableWidth - 4, ' ', \STR_PAD_BOTH);
-        $this->output .= $this->verticalExternalBorderChar;
-        $this->output .= PHP_EOL;
-    }
-    
-    protected function buildHeader(): void {
-        $this->output .= $this->buildHorizontalExternalSeparator();
-        
-        $this->output .= $this->verticalExternalBorderChar;
-        
-        foreach($this->colSpec as $name => $spec){
-            $label = $spec['label'];
-            $width = $spec['width'] - 2;
-            $align = $spec['align'];
-            $this->output .= str_pad($label, $width, ' ', $align);
-            if($name !== array_key_last($this->colSpec)){
-                $this->output .= $this->verticalInternalBorderChar;
-            }
-        }
-        
-        $this->output .= $this->verticalExternalBorderChar;
-        $this->output .= PHP_EOL;
-        
-        $this->output .= $this->buildHorizontalHeaderSeparator();
-        
-    }
-
-    protected function buildHorizontalHeaderSeparator(): string {
-        $output = $this->verticalExternalBorderChar;
-
-        foreach ($this->colSpec as $key => $spec) {
-            $output .= str_pad('', $spec['width'] - 2, $this->horizontalHeaderBorderChar);
-            if ($key !== array_key_last($this->colSpec)) {
-                $output .= $this->intersectionChar;
+            if (array_key_last($this->processed) !== $index) {
+                $this->output .= $this->buildHorizontalInternalBorder();
             }
         }
 
-        $output .= $this->verticalExternalBorderChar;
-
-        $output .= PHP_EOL;
-
-        return $output;
+        $this->output .= $this->buildHorizontalExternalBorder();
     }
-    
-    protected function buildHorizontalExternalSeparator(): string {
-        $output = $this->verticalExternalBorderChar;
 
-        foreach ($this->colSpec as $key => $spec) {
-            $output .= str_pad('', $spec['width'] - 2, $this->horizontalExternalBorderChar);
-            if ($key !== array_key_last($this->colSpec)) {
-//                $output .= $this->intersectionChar;
-                $output .= $this->horizontalExternalBorderChar;
-            }
+    protected function buildHorizontalExternalBorder(): string {
+        return str_pad('', $this->fullAvailableWidth, $this->horizontalExternalBorderChar) . PHP_EOL;
+    }
+
+    protected function buildHorizontalHeaderBorder(): string {
+        return $this->verticalExternalBorderChar . str_pad('', $this->fullAvailableWidth - 2, $this->horizontalHeaderBorderChar) . $this->verticalExternalBorderChar . PHP_EOL;
+    }
+
+    protected function buildHorizontalInternalBorder(): string {
+        return $this->verticalExternalBorderChar . str_pad('', $this->fullAvailableWidth - 2, $this->horizontalInternalBorderChar) . $this->verticalExternalBorderChar . PHP_EOL;
+    }
+
+    protected function strPadUnicode($str, $pad_len, $pad_str = ' ', $dir = STR_PAD_RIGHT) {
+        // cópia descara da de https://www.php.net/manual/en/function.str-pad.php#111147
+        $str_len = mb_strlen($str);
+        $pad_str_len = mb_strlen($pad_str);
+        if (!$str_len && ($dir == STR_PAD_RIGHT || $dir == STR_PAD_LEFT)) {
+            $str_len = 1; // @debug
+        }
+        if (!$pad_len || !$pad_str_len || $pad_len <= $str_len) {
+            return $str;
         }
 
-        $output .= $this->verticalExternalBorderChar;
-
-        $output .= PHP_EOL;
-
-        return $output;
-    }
-    
-    protected function buildHorizontalInternalSeparator(): string {
-        $output = $this->verticalExternalBorderChar;
-
-        foreach ($this->colSpec as $key => $spec) {
-            $output .= str_pad('', $spec['width'] - 2, $this->horizontalInternalBorderChar);
-            if ($key !== array_key_last($this->colSpec)) {
-                $output .= $this->intersectionChar;
-            }
+        $result = null;
+        $repeat = ceil($str_len - $pad_str_len + $pad_len);
+        if ($dir == STR_PAD_RIGHT) {
+            $result = $str . str_repeat($pad_str, $repeat);
+            $result = mb_substr($result, 0, $pad_len);
+        } else if ($dir == STR_PAD_LEFT) {
+            $result = str_repeat($pad_str, $repeat) . $str;
+            $result = mb_substr($result, -$pad_len);
+        } else if ($dir == STR_PAD_BOTH) {
+            $length = ($pad_len - $str_len) / 2;
+            $repeat = ceil($length / $pad_str_len);
+            $result = mb_substr(str_repeat($pad_str, $repeat), 0, floor($length))
+                    . $str
+                    . mb_substr(str_repeat($pad_str, $repeat), 0, ceil($length));
         }
 
-        $output .= $this->verticalExternalBorderChar;
-
-        $output .= PHP_EOL;
-
-        return $output;
+        return $result;
     }
 
-//    protected function getTableWidth(): int {
-//        $width = 0;
-//        foreach ($this->colSpec as $spec){
-//            $width += $spec['width'];
-//        }
-//        return $width;
-//    }
-
-    /**
-     * Quebra o conteúdo das células de acordo com a largura total de cada coluna e alinha o conteúdo.
-     * 
-     * @return void
-     */
-    protected function splitAndAlignCellContents(): void {
-        $cellHeight = 0; //altura máxima das células
-
-        foreach ($this->data as $index => $row) {
+    protected function alignCells(array $data, array $aligns, array $widths): array {
+        $names = $this->getColNames();
+        foreach ($data as $index => $row) {
             foreach ($row as $name => $cell) {
-                $width = $this->colSpec[$name]['width'] - 2; //subtrai porque cada célula tem um separador em cada lado
-                $align = $this->colSpec[$name]['align'];
-                $content = str_split($cell, $width);
-                foreach ($content as $key => $piece) {
-                    $content[$key] = str_pad($piece, $width, ' ', $align);
+                $align = $aligns[$name];
+                if ($name !== $names[array_key_last($names)]) {
+                    $width = $widths[$name] - 2;
+                } else {
+                    $width = $widths[$name] - 1;
                 }
-                if ($cellHeight < sizeof($content)) {
-                    $cellHeight = sizeof($content);
-                }
-
-                $this->data[$index][$name] = $content;
-            }
-        }
-
-        //coloca todas as linhas com a mesma altura
-        foreach ($this->data as $index => $row) {
-            foreach ($row as $name => $cell) {
-                $width = $this->colSpec[$name]['width'] - 2; //subtrai porque cada célula tem um separador em cada lado
-                if (sizeof($cell) < $cellHeight) {
-                    $this->data[$index][$name] = array_fill(array_key_last($cell) + 1, $cellHeight, str_pad('', $width, ' '));
+                foreach ($cell as $key => $line) {
+                    $data[$index][$name][$key] = $this->strPadUnicode($line, $width, ' ', $align);
                 }
             }
         }
+
+        return $data;
     }
 
-    /**
-     * Define uma largura máxima para a tabela.
-     * 
-     * Se for definida uma largura maior que a largura do console, a tabela será gerada na largura definida.
-     * 
-     * @param int $cols
-     * @return Table
-     */
-    public function setTableWidth(int $cols): Table {
-        $this->fullAvailableWidth = $cols;
+    protected function equalizeLines(array $data): array {
+        $maxLines = $this->maxLines($data);
+        foreach ($data as $index => $row) {
+            foreach ($row as $name => $cell) {
+                if (sizeof($cell) < $maxLines) {
+                    $count = $maxLines - sizeof($cell);
+                    $data[$index][$name] = array_merge($cell, array_fill(array_key_last($cell) + 1, $count, ''));
+                }
+            }
+        }
+
+        return $data;
+    }
+
+    protected function maxLines(array $data): int {
+        $maxLines = 0;
+
+        foreach ($data as $row) {
+            foreach ($row as $name => $cell) {
+                $size = sizeof($cell);
+                if ($maxLines < $size) {
+                    $maxLines = $size;
+                }
+            }
+        }
+
+        return $maxLines;
+    }
+
+    protected function splitCells(array $data): array {
+        $processed = [];
+        foreach ($data as $index => $row) {
+            foreach ($row as $name => $cell) {
+                $processed[$index][$name] = mb_str_split($cell, $this->colSpec[$name]['width'] - 2);
+            }
+        }
+
+        return $processed;
+    }
+
+    public function setColModel(ColModel ...$colmodels): Table {
+        foreach ($colmodels as $model) {
+            $this->colmodels[$model->getName()] = $model;
+        }
         return $this;
     }
 
@@ -279,7 +235,7 @@ class Table {
             }
         }
         $widthDefault = (int) ($avaliableWidth / $widthNull);
-        if($widthDefault < 1){
+        if ($widthDefault < 1) {
             throw new \LogicException("The default width of columns cannot be less than 1 [$widthDefault].");
         }
         foreach ($this->colSpec as $name => $spec) {
@@ -294,7 +250,6 @@ class Table {
         if ($widthUsed > $this->fullAvailableWidth) {
             throw new \LogicException("The columns used [$widthUsed] are larger than the columns available in the console [{$this->fullAvailableWidth}].");
         }
-        
     }
 
     /**
@@ -306,50 +261,21 @@ class Table {
         return array_keys($this->data[array_key_first($this->data)]);
     }
 
-    public function setColModel(ColModel ...$colmodels): Table {
-        foreach ($colmodels as $model) {
-            $this->colmodels[$model->getName()] = $model;
+    public function output(): string {
+        //determina a largura total da tabela
+        if ($this->fullAvailableWidth === 0) {
+            $this->fullAvailableWidth = $this->system->width();
         }
-        return $this;
+
+        $this->buildColSpec();
+        $this->prepare();
+        $this->buildBody();
+
+        return $this->output;
     }
 
     public function __toString(): string {
-        return $this->render();
-    }
-
-    public function setTitle(string $title): Table {
-        $this->title = $title;
-        return $this;
-    }
-
-    public function setIntersectionChar(string $char): Table {
-        $this->intersectionChar = $char;
-        return $this;
-    }
-
-    public function setVerticalInternalBorderChar(string $char): Table {
-        $this->verticalInternalBorderChar = $char;
-        return $this;
-    }
-
-    public function setHorizontalInternalBorderChar(string $char): Table {
-        $this->horizontalInternalBorderChar = $char;
-        return $this;
-    }
-
-    public function setHorizontalHeaderBorderChar(string $char): Table {
-        $this->horizontalHeaderBorderChar = $char;
-        return $this;
-    }
-
-    public function setHorizontalExternalBorderChar(string $char): Table {
-        $this->horizontalExternalBorderChar = $char;
-        return $this;
-    }
-
-    public function setVerticalExternalBorderChar(string $char): Table {
-        $this->verticalExternalBorderChar = $char;
-        return $this;
+        return $this->output();
     }
 
 }

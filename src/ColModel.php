@@ -8,9 +8,9 @@ namespace PTK\Console\Table;
  */
 class ColModel {
     
-    const ALIGN_LEFT = \STR_PAD_LEFT;//0
-    const ALIGN_RIGHT = \STR_PAD_RIGHT;//1
-    const ALIGN_CENTER = \STR_PAD_BOTH;//2
+    const ALIGN_LEFT = \STR_PAD_RIGHT;
+    const ALIGN_RIGHT = \STR_PAD_LEFT;
+    const ALIGN_CENTER = \STR_PAD_BOTH;
 
     protected string $name;
     protected string $label;
@@ -25,7 +25,7 @@ class ColModel {
      * @param int|float|null $width Largura da coluna. Se ```int```, é o número de colunas do console; se ```float```, é um percentual da largura da tabela.
      * @param int $align Alinhamento do conteúdo da célula. Também alinha o rótulo do cabeçalho.
      */
-    public function __construct(string $name, string $label = '', int|float|null $width = null, int $align = 0) {
+    public function __construct(string $name, string $label = '', int|float|null $width = null, int $align = 1) {
         $this->name = $name;
         $this->label = $label;
         $this->width = $width;
