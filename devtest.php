@@ -30,6 +30,7 @@ $tbl
         ->setColModel(new \PTK\Console\Table\ColModel('nome', width: 0.7, align: \PTK\Console\Table\ColModel::ALIGN_CENTER))
         ->setColModel(new \PTK\Console\Table\ColModel('age', width: 0.1, align: \PTK\Console\Table\ColModel::ALIGN_RIGHT))
         ->setTitle('Sample table')
+        ->setIntersectionChar(chr(215))
     ;
 
 echo $tbl;
