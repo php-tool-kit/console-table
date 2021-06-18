@@ -20,6 +20,7 @@ class Table {
     protected string $verticalInternalBorderChar = '|';
     protected string $horizontalInternalBorderChar = '-';
     protected string $horizontalHeaderBorderChar = '=';
+    protected string $caption = '';
 
     public function __construct(array $data) {
         mb_internal_encoding('utf-8');
@@ -288,6 +289,12 @@ class Table {
             }
         }
     }
+    
+    protected function buildCaption(): void {
+        $this->output .= $this->buildHorizontalExternalBorder();
+        
+        $this->output .= $this->verticalExternalBorderChar.$this->strPadUnicode($this->caption, $this->fullAvailableWidth-2, ' ', \STR_PAD_BOTH).$this->verticalExternalBorderChar;
+    }
 
     public function output(): string {
         //determina a largura total da tabela
@@ -297,6 +304,10 @@ class Table {
 
         $this->buildColSpec();
         $this->prepare();
+        
+        if($this->caption !== ''){
+            $this->buildCaption();
+        }
         $this->buildHeader();
         $this->buildBody();
 
@@ -330,6 +341,11 @@ class Table {
     
     public function setTabelWidth(int $width): Table {
         $this->fullAvailableWidth = $width;
+        return $this;
+    }
+    
+    public function setCaption(string $caption): Table {
+        $this->caption = $caption;
         return $this;
     }
 }
