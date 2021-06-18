@@ -310,7 +310,7 @@ class Table {
     protected function buildCaption(): void {
         $this->output .= $this->buildHorizontalExternalBorder();
         
-        $this->output .= $this->verticalExternalBorderChar.$this->strPadUnicode($this->caption, $this->fullAvailableWidth-2, ' ', \STR_PAD_BOTH).$this->verticalExternalBorderChar;
+        $this->output .= $this->verticalExternalBorderChar.$this->strPadUnicode($this->caption, $this->fullAvailableWidth-2, ' ', \STR_PAD_BOTH).$this->verticalExternalBorderChar.PHP_EOL;
     }
 
     public function output(): string {

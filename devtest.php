@@ -33,6 +33,9 @@ $dataNoUnicode = [
 ];
 
 $tbl1 = new \PTK\Console\Table\Table($dataUnicode);
-$tbl1->setCaption('Semple table');
+$tbl1
+    ->setTabelWidth(100)
+    ->setCaption('Sample table')
+    ;
 
 echo $tbl1;
