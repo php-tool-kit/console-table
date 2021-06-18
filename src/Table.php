@@ -141,7 +141,8 @@ class Table {
         foreach ($this->colSpec as $key => $spec) {
             $output .= str_pad('', $spec['width'] - 2, $this->horizontalExternalBorderChar);
             if ($key !== array_key_last($this->colSpec)) {
-                $output .= $this->intersectionChar;
+//                $output .= $this->intersectionChar;
+                $output .= $this->horizontalExternalBorderChar;
             }
         }
 
