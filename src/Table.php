@@ -23,12 +23,21 @@ class Table {
     protected string $caption = '';
     protected int $horizontalCellPadding = 1;
 
+    /**
+     * 
+     * @param array $data Os dados num formato tabular de linhas->colunas
+     */
     public function __construct(array $data) {
         mb_internal_encoding('utf-8');
         $this->data = $data;
         $this->system = \League\CLImate\Util\System\SystemFactory::getInstance();
     }
 
+    /**
+     * Prepara a saída em texto.
+     * 
+     * @return void
+     */
     protected function prepare(): void {
         $this->processed = $this->splitCells($this->data);
         $this->processed = $this->equalizeLines($this->processed);
@@ -40,17 +49,23 @@ class Table {
             $widths[$name] = $spec['width'];
         }
         $this->processed = $this->alignCells($this->processed, $aligns, $widths);
-
-//        print_r($this->processed);
-//        exit();
     }
 
+    /**
+     * Preenche a margem interna com espaços.
+     * 
+     * @return string
+     */
     protected function getPadString(): string {
         return str_pad('', $this->horizontalCellPadding);
     }
 
+    /**
+     * Constroi o texto do corpo da tabela,
+     * 
+     * @return void
+     */
     protected function buildBody(): void {
-//        print_r($this->processed);exit();
         $maxLines = $this->maxLines($this->processed);
         $names = $this->getColNames();
 
@@ -80,20 +95,44 @@ class Table {
         $this->output .= $this->buildHorizontalExternalBorder();
     }
 
+    /**
+     * Constroi o texto para borda horizontal externa.
+     * 
+     * @return string
+     */
     protected function buildHorizontalExternalBorder(): string {
         return str_pad('', $this->fullAvailableWidth, $this->horizontalExternalBorderChar) . PHP_EOL;
     }
 
+    /**
+     * Cosntroi o texto da borda horizontal que separa o cabeçalho do corpo da tabela.
+     * 
+     * @return string
+     */
     protected function buildHorizontalHeaderBorder(): string {
         return $this->verticalExternalBorderChar . str_pad('', $this->fullAvailableWidth - 2, $this->horizontalHeaderBorderChar) . $this->verticalExternalBorderChar . PHP_EOL;
     }
 
+    /**
+     * Constrio o texto da borda horizontal que separa as linhas da tabela.
+     * 
+     * @return string
+     */
     protected function buildHorizontalInternalBorder(): string {
         return $this->verticalExternalBorderChar . str_pad('', $this->fullAvailableWidth - 2, $this->horizontalInternalBorderChar) . $this->verticalExternalBorderChar . PHP_EOL;
     }
 
-    protected function strPadUnicode($str, $pad_len, $pad_str = ' ', $dir = STR_PAD_RIGHT) {
-        // cópia descara da de https://www.php.net/manual/en/function.str-pad.php#111147
+    /**
+     * Wrapper de str_pad() para trabalhar com utf-8
+     * É uma cópia descarada de https://www.php.net/manual/en/function.str-pad.php#111147
+     * 
+     * @param string $str
+     * @param int $pad_len
+     * @param string $pad_str
+     * @param int $dir
+     * @return string
+     */
+    protected function strPadUnicode(string $str, int $pad_len, string $pad_str = ' ', int $dir = STR_PAD_RIGHT) {
         $str_len = mb_strlen($str);
         $pad_str_len = mb_strlen($pad_str);
         if (!$str_len && ($dir == STR_PAD_RIGHT || $dir == STR_PAD_LEFT)) {
@@ -122,6 +161,14 @@ class Table {
         return $result;
     }
 
+    /**
+     * Alinha o conteúdo das células.
+     * 
+     * @param array $data
+     * @param array $aligns
+     * @param array $widths
+     * @return array
+     */
     protected function alignCells(array $data, array $aligns, array $widths): array {
         $names = $this->getColNames();
         foreach ($data as $index => $row) {
@@ -141,6 +188,12 @@ class Table {
         return $data;
     }
 
+    /**
+     * Iguala o número de linhas de todas as células de uma linha.
+     * 
+     * @param array $data
+     * @return array
+     */
     protected function equalizeLines(array $data): array {
         $maxLines = $this->maxLines($data);
         foreach ($data as $index => $row) {
@@ -155,6 +208,12 @@ class Table {
         return $data;
     }
 
+    /**
+     * Detecta o número máximo de linhas para as células.
+     * 
+     * @param array $data
+     * @return int
+     */
     protected function maxLines(array $data): int {
         $maxLines = 0;
 
@@ -170,6 +229,12 @@ class Table {
         return $maxLines;
     }
 
+    /**
+     * Divide o conteúdo das células em linhas de comprimento menor ou igual ao tamanho útil da coluna.
+     * 
+     * @param array $data
+     * @return array
+     */
     protected function splitCells(array $data): array {
         $processed = [];
         foreach ($data as $index => $row) {
@@ -177,22 +242,14 @@ class Table {
                 $processed[$index][$name] = mb_str_split($cell, $this->colSpec[$name]['width'] - 2 - ($this->horizontalCellPadding * 2));
             }
         }
-//        $processed = $this->applyHorizontalCellPadding($processed);
         return $processed;
     }
 
-//    protected function applyHorizontalCellPadding(array $data): array {
-//        $processed = [];
-//        foreach ($data as $index => $row){
-//            foreach ($row as $name => $cell){
-//                foreach ($cell as $key => $line){
-//                    $processed[$index][$name][$key] = $this->strPadUnicode($line, $this->horizontalCellPadding, ' ', \STR_PAD_BOTH);
-//                }
-//            }
-//        }
-//        return $processed;
-//    }
-
+    /**
+     * 
+     * @param ColModel $colmodels
+     * @return Table
+     */
     public function setColModel(ColModel ...$colmodels): Table {
         foreach ($colmodels as $model) {
             $this->colmodels[$model->getName()] = $model;
@@ -202,6 +259,7 @@ class Table {
 
     /**
      * Prepara a especificação das colunas com base nos colmodels existentes.
+     * 
      * @return void
      */
     protected function buildColSpec(): void {
@@ -223,7 +281,7 @@ class Table {
     }
 
     /**
-     * Calcula as larguras de colunas em colunas do console.
+     * Calcula as larguras de colunas em termos de colunas do console.
      * 
      * @return void
      */
@@ -309,12 +367,22 @@ class Table {
         }
     }
 
+    /**
+     * Constroi o texto do título da tabela.
+     * 
+     * @return void
+     */
     protected function buildCaption(): void {
         $this->output .= $this->buildHorizontalExternalBorder();
 
         $this->output .= $this->verticalExternalBorderChar . $this->strPadUnicode($this->caption, $this->fullAvailableWidth - 2, ' ', \STR_PAD_BOTH) . $this->verticalExternalBorderChar . PHP_EOL;
     }
 
+    /**
+     * Constroi a tabela como texto.
+     * 
+     * @return string
+     */
     public function output(): string {
         //determina a largura total da tabela
         if ($this->fullAvailableWidth === 0) {
@@ -337,41 +405,89 @@ class Table {
         return $this->output();
     }
 
+    /**
+     * Define o caractere que será usado na borda horizontal que separa o cabeçalho do corpo da tabela.
+     * 
+     * @param string $char
+     * @return Table
+     */
     public function setHorizontalHeaderBorderChar(string $char): Table {
         $this->horizontalHeaderBorderChar = $char;
         return $this;
     }
 
+    /**
+     * Define o caractere usado para as bordas horizontais entre linhas da tabela.
+     * 
+     * @param string $char
+     * @return Table
+     */
     public function setHorizontalInternalBorderChar(string $char): Table {
         $this->horizontalInternalBorderChar = $char;
         return $this;
     }
 
+    /**
+     * Define o caractere usado nas bordas verticais interna (entre células).
+     * 
+     * @param string $char
+     * @return Table
+     */
     public function setVerticalInternalBorderChar(string $char): Table {
         $this->verticalInternalBorderChar = $char;
         return $this;
     }
 
+    /**
+     * Define o caractere usado nas bordas horizontais externas.
+     * 
+     * @param string $char
+     * @return Table
+     */
     public function setHorizontalExternalBorderChar(string $char): Table {
         $this->horizontalExternalBorderChar = $char;
         return $this;
     }
 
+    /**
+     * Define o caractere usado nas bordas verticais externas.
+     * 
+     * @param string $char
+     * @return Table
+     */
     public function setVerticalExternalBorderChar(string $char): Table {
         $this->verticalExternalBorderChar = $char;
         return $this;
     }
 
+    /**
+     * Define a largura, em colunas do console, da tabela.
+     * 
+     * @param int $width
+     * @return Table
+     */
     public function setTabelWidth(int $width): Table {
         $this->fullAvailableWidth = $width;
         return $this;
     }
 
+    /**
+     * Define o número de colunas do console que comporão a margem horizontal interna de cada célula.
+     * 
+     * @param int $padding
+     * @return Table
+     */
     public function setHorizontalCellPadding(int $padding): Table {
         $this->horizontalCellPadding = $padding;
         return $this;
     }
 
+    /**
+     * Define o título da tabela.
+     * 
+     * @param string $caption
+     * @return Table
+     */
     public function setCaption(string $caption): Table {
         $this->caption = $caption;
         return $this;

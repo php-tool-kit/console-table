@@ -11,6 +11,8 @@
     ],
     "minimum-stability": "dev",
     "require": {
+        "php": ">=8.0.3",
+        "ext-mbstring": "*",
         "league/climate": "dev-master"
     },
     "autoload": {
